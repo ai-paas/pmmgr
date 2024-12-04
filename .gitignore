@@ -2,3 +2,5 @@
 *.log
 __pycache__/
 *.hwp
+tmp/
+
