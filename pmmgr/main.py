@@ -5,7 +5,7 @@ import argparse
 from fastapi import FastAPI, HTTPException, Request
 from typing import List
 
-from pmmgr.chatmodel import ChatModelPool
+from pmmgr.cm import ChatModelPool
 from pmmgr.common import settings, MessageCode, FileUtils
 import pmmgr.db as db
 from pmmgr.db import PretrainedModelInfo
