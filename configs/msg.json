@@ -1,0 +1,5 @@
+{
+  "DB_ERROR": "Database error",
+  "NO_AVAILABLE_CHAT_MODEL": "No available chat model. Please try again later.",
+  "UNKNOWN_ERROR": "Unknown error"
+}
