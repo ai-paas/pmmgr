@@ -172,6 +172,12 @@ class ChatModelPool(object):
         #     logger.info(f'Created multi chat model with {self.cm_map[key].n_models} source chat models for {key}')
         return self.cm_map[id_or_path]
 
+    def increase_cm_srv_instances(self, id_or_path):
+        pass
+
+    def decrease_cm_srv_instances(self, id_or_path):
+        pass
+
     @classmethod
     def create_multi_chat_model(cls, pm_info=None):
         logger.info(f"Creating multi-chat model with {pm_info.n_srv_instances} instances for {pm_info.id_or_path}")
