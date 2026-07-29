@@ -95,7 +95,7 @@ class MessageCode(StrEnum):
     DB_ERROR = auto()
     UNKNOWN_ERROR = auto()
 
-    FN_MSG_MAP = '../configs/msg.json'
+    FN_MSG_MAP = os.path.join(os.path.dirname(__file__), '../configs/msg.json')
 
     @classmethod
     def get_message(cls, msg_code):

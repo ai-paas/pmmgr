@@ -173,10 +173,41 @@ class ChatModelPool(object):
         return self.cm_map[id_or_path]
 
     def increase_cm_srv_instances(self, id_or_path):
-        pass
+        pm_info = db.get_pretrained_model_info(id_or_path=id_or_path)
+        if pm_info is None:
+            raise MessageCodeException(MessageCode.DB_ERROR, f"Model not found: {id_or_path}")
+
+        mcm = self.cm_map.get(id_or_path)
+        if mcm is None:
+            raise MessageCodeException(MessageCode.DB_ERROR, f"Model not loaded: {id_or_path}")
+
+        new_cm = self.create_chat_model(pm_info=pm_info)
+        new_wrapper = MultiChatModel.ModelWrapper(minfo=pm_info.to_dict(), cm=new_cm)
+        mcm.cms.append(new_wrapper)
+
+        pm_info.n_srv_instances += 1
+        db.update_pretrained_model_info(model_info=pm_info)
+        self.fire_cm_updated(self, id_or_path, mcm)
+        logger.info(f"Increased instances of {id_or_path} to {pm_info.n_srv_instances}")
 
     def decrease_cm_srv_instances(self, id_or_path):
-        pass
+        pm_info = db.get_pretrained_model_info(id_or_path=id_or_path)
+        if pm_info is None:
+            raise MessageCodeException(MessageCode.DB_ERROR, f"Model not found: {id_or_path}")
+
+        mcm = self.cm_map.get(id_or_path)
+        if mcm is None:
+            raise MessageCodeException(MessageCode.DB_ERROR, f"Model not loaded: {id_or_path}")
+
+        if len(mcm.cms) == 0:
+            raise MessageCodeException(MessageCode.DB_ERROR, f"No instances to remove for {id_or_path}")
+
+        mcm.cms.pop()
+
+        pm_info.n_srv_instances -= 1
+        db.update_pretrained_model_info(model_info=pm_info)
+        self.fire_cm_updated(self, id_or_path, mcm)
+        logger.info(f"Decreased instances of {id_or_path} to {pm_info.n_srv_instances}")
 
     @classmethod
     def create_multi_chat_model(cls, pm_info=None):
@@ -257,6 +288,87 @@ class ChatModelPoolTest(BaseTest):
         cm_pool = ChatModelPool.get_instance()
         self.assertIsNotNone(cm_pool)
         self.assertEqual(id(cm_pool), id(ChatModelPool.get_instance()))
+
+    def _use_test_db(self):
+        real_db = db
+        test_infos = real_db.list_pretrained_model_info(settings.TEST_DB_PATH)
+        if hasattr(ChatModelPool, "_instance"):
+            delattr(ChatModelPool, "_instance")
+        self._patcher = patch('pmmgr.cm.db')
+        self.mock_db = self._patcher.start()
+        self.mock_db.list_pretrained_model_info.return_value = test_infos
+        self.mock_db.get_pretrained_model_info.side_effect = \
+            lambda db_path=None, id_or_path=None: real_db.get_pretrained_model_info(settings.TEST_DB_PATH, id_or_path)
+        self.mock_db.update_pretrained_model_info.side_effect = \
+            lambda db_path=None, model_info=None: real_db.update_pretrained_model_info(settings.TEST_DB_PATH, model_info)
+
+    def _restore_db(self):
+        self._patcher.stop()
+        if hasattr(ChatModelPool, "_instance"):
+            delattr(ChatModelPool, "_instance")
+
+    def test_increase_cm_srv_instances(self):
+        self._use_test_db()
+        test_id = "gemma3:1b"
+        try:
+            cm_pool = ChatModelPool.get_instance()
+            cm_pool.init_cm_map(id_or_paths=[test_id])
+            init_n_srv = db.get_pretrained_model_info(settings.TEST_DB_PATH, test_id).n_srv_instances
+            mcm = cm_pool.cm_map[test_id]
+            initial_count = len(mcm.cms)
+
+            cm_pool.increase_cm_srv_instances(test_id)
+
+            self.assertEqual(len(mcm.cms), initial_count + 1)
+            self.assertIsInstance(mcm.cms[-1], MultiChatModel.ModelWrapper)
+            self.assertTrue(mcm.cms[-1].ready)
+            updated = db.get_pretrained_model_info(settings.TEST_DB_PATH, test_id)
+            self.assertEqual(updated.n_srv_instances, init_n_srv + 1)
+        finally:
+            self._restore_db()
+
+    def test_decrease_cm_srv_instances(self):
+        self._use_test_db()
+        test_id = "gemma3:1b"
+        try:
+            cm_pool = ChatModelPool.get_instance()
+            cm_pool.init_cm_map(id_or_paths=[test_id])
+            init_n_srv = db.get_pretrained_model_info(settings.TEST_DB_PATH, test_id).n_srv_instances
+            mcm = cm_pool.cm_map[test_id]
+            initial_count = len(mcm.cms)
+
+            cm_pool.decrease_cm_srv_instances(test_id)
+
+            self.assertEqual(len(mcm.cms), initial_count - 1)
+            updated = db.get_pretrained_model_info(settings.TEST_DB_PATH, test_id)
+            self.assertEqual(updated.n_srv_instances, init_n_srv - 1)
+        finally:
+            self._restore_db()
+
+    def test_decrease_cm_srv_instances_below_zero_raises_error(self):
+        self._use_test_db()
+        try:
+            cm_pool = ChatModelPool.get_instance()
+            cm_pool.init_cm_map(id_or_paths=["gemma3:1b"])
+            mcm = cm_pool.cm_map["gemma3:1b"]
+
+            for _ in range(len(mcm.cms)):
+                cm_pool.decrease_cm_srv_instances("gemma3:1b")
+
+            self.assertEqual(len(mcm.cms), 0)
+            with self.assertRaises(MessageCodeException):
+                cm_pool.decrease_cm_srv_instances("gemma3:1b")
+        finally:
+            self._restore_db()
+
+    def test_increase_nonexistent_model_raises_error(self):
+        self._use_test_db()
+        try:
+            cm_pool = ChatModelPool.get_instance()
+            with self.assertRaises(MessageCodeException):
+                cm_pool.increase_cm_srv_instances("nonexistent-model")
+        finally:
+            self._restore_db()
 
 
 class MultiChatModelTest(BaseTest):
