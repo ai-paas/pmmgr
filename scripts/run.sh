@@ -3,6 +3,7 @@
 ROOT_DIR=$(cd $(dirname $0)/..; pwd)
 PORT=8001
 
+echo "$ROOT_DIR"
 export PATH=$PATH:$ROOT_DIR:$ROOT_DIR/pmmgr
 export PYTHONPATH=$PYTHONPATH:$ROOT_DIR:$ROOT_DIR/pmmgr
 

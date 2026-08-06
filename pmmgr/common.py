@@ -11,12 +11,14 @@ import logging
 from typing import List
 
 
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 class Settings(BaseSettings):
-    DB_PATH: str = "/trunk/pmmgr/data/db/pmmgr.db"
-    TEST_DB_PATH: str = "/trunk/pmmgr/data/db/test.db"
-    LOGGING_CONFIG_PATH: str = "/trunk/pmmgr/configs/logging.conf"
-    PM_INFO_CSV: str = "/trunk/pmmgr/data/pminfo.csv"
-    TEST_PM_INFO_CSV: str = "/trunk/pmmgr/data/test_pminfo.csv"
+    DB_PATH: str = os.path.join(_PROJECT_ROOT, "data/db/pmmgr.db")
+    TEST_DB_PATH: str = os.path.join(_PROJECT_ROOT, "data/db/test.db")
+    LOGGING_CONFIG_PATH: str = os.path.join(_PROJECT_ROOT, "configs/logging.conf")
+    PM_INFO_CSV: str = os.path.join(_PROJECT_ROOT, "data/pminfo.csv")
+    TEST_PM_INFO_CSV: str = os.path.join(_PROJECT_ROOT, "data/test_pminfo.csv")
     LOG_LEVEL: str = "INFO"
 
     class Config:
