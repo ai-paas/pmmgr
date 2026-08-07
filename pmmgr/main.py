@@ -37,13 +37,21 @@ def generate_answer(id_or_path: str, query: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/model/info/", response_model=PretrainedModelInfo)
+@app.post("/model/info/add", response_model=PretrainedModelInfo)
 def add_pretrained_model_info(model_info: PretrainedModelInfo):
     try:
         db.insert_pretrained_model_info(model_info=model_info)
         return model_info
     except Exception as e:
         logger.error(f"Error occurred while adding model info: {e}")
+        raise HTTPException(status_code=400, detail=MessageCode.get_message(DB_ERROR))
+
+@app.get("/model/info/list", response_model=List[PretrainedModelInfo])
+def list_pretrained_model_infos():
+    try:
+        return db.list_pretrained_model_info()
+    except Exception as e:
+        logger.error(f"Error occurred while listing model infos: {e}")
         raise HTTPException(status_code=400, detail=MessageCode.get_message(DB_ERROR))
 
 @app.get("/model/info/{id_or_path}", response_model=PretrainedModelInfo)
@@ -55,15 +63,7 @@ def get_pretrained_model_info(id_or_path: str):
         logger.error(f"Error occurred while getting model info: {e}")
         raise HTTPException(status_code=400, detail=MessageCode.get_message(DB_ERROR))
 
-@app.get("/model/info/", response_model=List[PretrainedModelInfo])
-def list_pretrained_model_infos():
-    try:
-        return db.list_pretrained_model_info()
-    except Exception as e:
-        logger.error(f"Error occurred while listing model infos: {e}")
-        raise HTTPException(status_code=400, detail=MessageCode.get_message(DB_ERROR))
-
-@app.put("/model/info/", response_model=PretrainedModelInfo)
+@app.put("/model/info/update", response_model=PretrainedModelInfo)
 def update_pretrained_model_info(model_info: PretrainedModelInfo):
     try:
         db.update_pretrained_model_info(model_info=model_info)
@@ -72,7 +72,7 @@ def update_pretrained_model_info(model_info: PretrainedModelInfo):
         logger.error(f"Error occurred while updating model info: {e}")
         raise HTTPException(status_code=400, detail=MessageCode.get_message(DB_ERROR))
 
-@app.delete("/model/info/{id_or_path}", response_model=dict)
+@app.delete("/model/info/delete/{id_or_path}", response_model=dict)
 def delete_pretrained_model(id_or_path: str):
     try:
         db.delete_pretrained_model_info(id_or_path=id_or_path)
