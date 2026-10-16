@@ -14,8 +14,7 @@ medgemma1.5:4b,medgemma1.5:4b,2026-07-28 16:56:47,Image-Text to Text,"MedGemma 1
 ",4000000000,"Text,Image",Text,-,3300000000,2026-07-28 16:56:47,ollama,128000,Apache-2.0,1,{},"Average of MMLU-Redux, GPQA-Diamond",65.7
 minicpm-v4.6:1b,minicpm-v4.6:1b,2026-07-28 16:56:47,Image-Text to Text,"A Pocket-Sized MLLM for Ultra-Efficient Image and Video Understanding on Your Phone
 ",1000000000,"Text,Image",Text,-,1600000000,2026-07-28 16:56:47,ollama,256000,Apache-2.0,1,{},"Average of MMLU-Redux, GPQA-Diamond",62.1
-glm-ocr:q8_0,glm-ocr:q8_0,2026-07-28 16:56:47,Image-Text to Text,"GLM-OCR is a multimodal OCR model for complex document understanding, built on the GLM-V encoder–decoder architecture.
-",500000000,"Text,Image",Text,-,1600000000,2026-07-28 16:56:47,ollama,128000,Apache-2.0,1,{},OmmiDocBench v1.5,92.1
+ornith-1.5:9b,ornith-1.5:9b,2026-07-28 16:56:47,Image-Text to Text,"Ornith-1.5 extends Ornith-1.0 by expanding the self-improvement loop from scaffold and rollout optimization to jointly optimizing task generation, scaffold construction, and solution rollouts. Rather than relying on a fixed set of human-curated tasks and manually designed harnesses, ",5000000000,"Text,Image",Text,-,6600000000,2026-07-28 16:56:47,ollama,256000,Apache-2.0,1,{},"Average of MMLU-Redux, GPQA-Diamond",68.5
 translategemma:4b,translategemma:4b,2026-07-28 16:56:47,Image-Text to Text,"A new collection of open translation models built on Gemma 3, helping people communicate across 55 languages.
 ",4000000000,"Text,Image",Text,-,3300000000,2026-07-28 16:56:47,ollama,128000,Apache-2.0,1,{},"Average of MMLU-Redux, GPQA-Diamond",61.4
 nemotron-3-nano:4b,nemotron-3-nano:4b,2026-07-28 16:56:47,Text Generation,"Nemotron-3-Nano is a new Standard for Efficient, Open, and Intelligent Agentic Models, now updated with a 4B parameter count model.
