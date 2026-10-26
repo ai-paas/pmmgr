@@ -10,8 +10,11 @@ Usage:
     python3 scripts/test_all_models.py \
         --base-url http://101.202.128.10:8001 \
         --query "Tell me about RAG briefly" --passes 2 \
-        --json-out results/2026-10-26_rag_generation_test.json \
+        --json-out /tmp/rag_generation_test.json \
         --md-out results/2026-10-26_rag_generation_test.md
+
+--json-out keeps the raw answer bodies; point it outside the repository.
+--md-out writes counts, latency and verdicts only, so it is safe to commit.
 """
 
 import argparse
@@ -46,19 +49,23 @@ def call_once(url, timeout):
     started = time.time()
     status = None
     raw = None
+
+    def failed(error):
+        return {
+            "http": status,
+            "secs": round(time.time() - started, 2),
+            "chars": 0,
+            "ok": False,
+            "error": error[:2000],
+        }
+
     try:
         with urllib.request.urlopen(url, timeout=timeout) as resp:
             status = resp.status
             raw = resp.read().decode("utf-8")
         body = json.loads(raw)
         if not isinstance(body, str):
-            return {
-                "http": status,
-                "secs": round(time.time() - started, 2),
-                "chars": 0,
-                "ok": False,
-                "error": f"unexpected response type: {type(body).__name__}",
-            }
+            return failed(f"unexpected response type: {type(body).__name__}")
         return {
             "http": status,
             "secs": round(time.time() - started, 2),
@@ -66,15 +73,13 @@ def call_once(url, timeout):
             "ok": bool(body.strip()),
             "answer": body,
         }
+    except urllib.error.HTTPError as e:
+        # urlopen raises before status/raw are set; keep the server's detail.
+        status = e.code
+        raw = e.read().decode("utf-8", "replace")
+        return failed(f"HTTP {status}: {raw}")
     except Exception as e:  # network errors, timeouts, non-JSON error pages
-        err = raw if raw is not None else f"{type(e).__name__}: {e}"
-        return {
-            "http": status,
-            "secs": round(time.time() - started, 2),
-            "chars": 0,
-            "ok": False,
-            "error": str(err)[:2000],
-        }
+        return failed(raw if raw is not None else f"{type(e).__name__}: {e}")
 
 
 def write_markdown(path, base_url, query, passes, results):
@@ -121,6 +126,9 @@ def main():
     parser.add_argument("--base-url", default="http://localhost:8001")
     parser.add_argument("--query", default=DEFAULT_QUERY)
     parser.add_argument("--passes", type=int, default=1)
+    parser.add_argument("--models", default=None,
+                        help="comma-separated id_or_path list; unregistered ids are "
+                             "queried as given (default: all registered models)")
     parser.add_argument("--timeout", type=float, default=300.0,
                         help="per-request timeout in seconds")
     parser.add_argument("--json-out", default=None)
@@ -129,6 +137,8 @@ def main():
 
     base_url = args.base_url.rstrip("/")
     models = list_models(base_url, args.timeout)
+    if args.models:
+        models = [m.strip() for m in args.models.split(",") if m.strip()]
     print(f"models={len(models)} passes={args.passes}", flush=True)
 
     results = []
